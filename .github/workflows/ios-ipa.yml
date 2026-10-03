@@ -16,6 +16,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Select latest Xcode
+        shell: bash
+        run: |
+          echo "Available Xcode versions:"
+          ls -1 /Applications | grep Xcode || true
+          XCODE_PATH=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort | tail -n 1)
+          if [ -z "$XCODE_PATH" ]; then
+            echo "No Xcode app found on runner."
+            exit 1
+          fi
+          echo "Using Xcode at $XCODE_PATH"
+          sudo xcode-select -switch "$XCODE_PATH/Contents/Developer"
+          xcodebuild -version
+          xcodebuild -showsdks | tail -n 20
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -77,7 +92,9 @@ jobs:
         shell: bash
         run: |
           cd example
-
+          echo "SDKs available to Flutter:"
+          xcodebuild -showsdks || true
+          echo "---"
           if [ -f export_options.plist ]; then
             flutter build ipa --release --export-options-plist=../export_options.plist
           else
