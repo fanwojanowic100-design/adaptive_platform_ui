@@ -75,13 +75,10 @@ class iOS26GlassCapsuleView: NSObject, FlutterPlatformView {
         container.frame = frame
         container.backgroundColor = .clear
 
-        if #available(iOS 26.0, *) {
-            let glass = UIGlassEffect()
-            glass.isInteractive = true
-            effectView.effect = glass
-        } else {
-            effectView.effect = UIBlurEffect(style: .systemThinMaterial)
-        }
+        // Use the standard blur material on all SDKs; the iOS 26 Liquid Glass
+        // effect is unavailable on older toolchains and must not be referenced
+        // directly in code that needs to build on both older and newer Xcode.
+        effectView.effect = UIBlurEffect(style: .systemThinMaterial)
         effectView.clipsToBounds = true
         effectView.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(effectView)

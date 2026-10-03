@@ -302,9 +302,9 @@ class iOS26PopupMenuButtonView: NSObject, FlutterPlatformView {
             case "borderedProminent": config = .borderedProminent()
             case "filled": config = .filled()
             case "glass":
-                if #available(iOS 26.0, *) { config = .glass() } else { config = .tinted() }
+                config = .tinted()
             case "prominentGlass":
-                if #available(iOS 26.0, *) { config = .prominentGlass() } else { config = .tinted() }
+                config = .tinted()
             default:
                 config = .plain()
             }

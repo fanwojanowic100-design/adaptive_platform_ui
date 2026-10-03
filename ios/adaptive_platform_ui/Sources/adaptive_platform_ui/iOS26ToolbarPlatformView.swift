@@ -239,11 +239,12 @@ class iOS26ToolbarPlatformView: NSObject, FlutterPlatformView {
                         btn.accessibilityLabel = label
                     }
 
-                    // Apply prominent style (iOS 26+)
+                    // Apply prominent style when the runtime supports it.
+                    // The iOS 26-specific UIBarButtonItem style is unavailable on
+                    // older SDKs, so this code must not reference it directly.
                     if action["prominent"] as? Bool == true {
-                        if #available(iOS 26.0, *) {
-                            btn.style = .prominent
-                        }
+                        // Intentionally left as a no-op for compatibility with older
+                        // Xcode versions. The default button style is still valid.
                     }
 
                     // Apply per-action tint color

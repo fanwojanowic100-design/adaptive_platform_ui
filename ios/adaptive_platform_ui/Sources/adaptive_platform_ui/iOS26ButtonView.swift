@@ -179,21 +179,15 @@ class iOS26ButtonView: NSObject, FlutterPlatformView {
             case "plain":
                 config = .plain()
             case "glass":
-                if #available(iOS 26.0, *) {
-                    config = .glass()
-                } else {
-                    // Fallback: plain style with background material
-                    config = .plain()
-                    config.background.visualEffect = UIBlurEffect(style: .systemUltraThinMaterial)
-                }
+                // Fallback for older SDKs: use the standard material-based button
+                // configuration instead of the iOS 26-only glass configuration.
+                config = .tinted()
+                config.background.visualEffect = UIBlurEffect(style: .systemUltraThinMaterial)
             case "prominentGlass":
-                if #available(iOS 26.0, *) {
-                    config = .prominentGlass()
-                } else {
-                    // Fallback: tinted style with thicker material
-                    config = .tinted()
-                    config.background.visualEffect = UIBlurEffect(style: .systemMaterial)
-                }
+                // Fallback for older SDKs: use a strong tinted style rather than the
+                // iOS 26-only prominent glass configuration.
+                config = .tinted()
+                config.background.visualEffect = UIBlurEffect(style: .systemMaterial)
             default:
                 config = .filled()
             }
