@@ -1,0 +1,101 @@
+name: iOS IPA Build
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-ipa:
+    name: Build iOS IPA
+    runs-on: macos-15
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.6'
+          channel: 'stable'
+          cache: true
+
+      - name: Install CocoaPods
+        run: |
+          sudo gem install cocoapods
+
+      - name: Install Flutter dependencies
+        run: |
+          flutter pub get
+          cd example
+          flutter pub get
+
+      - name: Install iOS pods
+        run: |
+          cd example/ios
+          pod install --repo-update
+
+      - name: Configure signing if provided
+        env:
+          P12_BASE64: ${{ secrets.P12_BASE64 }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+          PROVISIONING_PROFILE_BASE64: ${{ secrets.PROVISIONING_PROFILE_BASE64 }}
+          EXPORT_OPTIONS_PLIST: ${{ secrets.EXPORT_OPTIONS_PLIST }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD || 'temporary-keychain-password' }}
+        shell: bash
+        run: |
+          if [ -n "$P12_BASE64" ] || [ -n "$PROVISIONING_PROFILE_BASE64" ] || [ -n "$EXPORT_OPTIONS_PLIST" ]; then
+            echo "Signing secrets detected. Configuring keychain and provisioning profile..."
+
+            security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+            security default-keychain -s build.keychain
+            security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+            security set-keychain-settings -lut 21600 build.keychain
+
+            if [ -n "$P12_BASE64" ]; then
+              echo "$P12_BASE64" | base64 --decode > cert.p12
+              security import cert.p12 -k build.keychain -P "$P12_PASSWORD" -T /usr/bin/codesign
+              security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" build.keychain
+            fi
+
+            if [ -n "$PROVISIONING_PROFILE_BASE64" ]; then
+              mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+              echo "$PROVISIONING_PROFILE_BASE64" | base64 --decode > "$HOME/Library/MobileDevice/Provisioning Profiles/profile.mobileprovision"
+            fi
+
+            if [ -n "$EXPORT_OPTIONS_PLIST" ]; then
+              printf '%s' "$EXPORT_OPTIONS_PLIST" > export_options.plist
+            fi
+          else
+            echo "No signing secrets provided. The build will skip code signing and create an unsigned IPA archive."
+          fi
+
+      - name: Build iOS archive / IPA
+        shell: bash
+        run: |
+          cd example
+
+          if [ -f export_options.plist ]; then
+            flutter build ipa --release --export-options-plist=../export_options.plist
+          else
+            flutter build ipa --release --no-codesign
+          fi
+
+      - name: Verify artifact exists
+        shell: bash
+        run: |
+          ls -l example/build/ios/ipa || true
+          find example/build -maxdepth 4 \( -name '*.ipa' -o -name '*.xcarchive' \) -print | head -20
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: adaptive-platform-ui-ipa
+          path: |
+            example/build/ios/ipa/*.ipa
+            example/build/ios/archive/**/*.xcarchive
+          if-no-files-found: warn
+          retention-days: 30
