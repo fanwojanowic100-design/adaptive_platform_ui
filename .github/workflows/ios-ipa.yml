@@ -42,6 +42,18 @@ jobs:
         run: flutter build ipa --release --no-codesign
         working-directory: example
 
+      - name: Package unsigned IPA
+        run: |
+          app_path=$(find build/ios/archive -type d -path '*/Products/Applications/*.app' -print -quit)
+          test -n "$app_path"
+          app_name=$(basename "$app_path")
+          temp_dir=$(mktemp -d)
+          trap 'rm -rf "$temp_dir"' EXIT
+          mkdir -p "$temp_dir/Payload" build/ios/ipa
+          ditto "$app_path" "$temp_dir/Payload/$app_name"
+          ditto -c -k --sequesterRsrc --keepParent "$temp_dir/Payload" "build/ios/ipa/${app_name%.app}.ipa"
+        working-directory: example
+
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
