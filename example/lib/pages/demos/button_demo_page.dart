@@ -32,7 +32,7 @@ class _ButtonDemoPageState extends State<ButtonDemoPage> {
   }
 
   Widget _buildBody(BuildContext context) {
-    final topPadding = PlatformInfo.isIOS ? 130.0 : 16.0;
+    final topPadding = PlatformInfo.isIOS26OrHigher() ? 130.0 : 16.0;
 
     return ListView(
       padding: EdgeInsets.only(
@@ -121,13 +121,6 @@ class _ButtonDemoPageState extends State<ButtonDemoPage> {
               ),
             ],
           )
-        else
-          _buildSection(
-            context,
-            title: "iOS 26 Button Examples",
-            children: [Text("The device does NOT support")],
-          ),
-
         const SizedBox(height: 24),
 
         _buildSection(
