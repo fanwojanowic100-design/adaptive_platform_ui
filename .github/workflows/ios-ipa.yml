@@ -3,6 +3,9 @@ name: iOS IPA Build
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: macos-latest
@@ -14,27 +17,20 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: 3.35.6
           cache: true
+          cache-dependency-path: example/pubspec.lock
 
       - name: Flutter Doctor
         run: flutter doctor -v
 
       - name: Get Dependencies
-        run: |
-          flutter pub get
-          cd example
-          flutter pub get
-
-      - name: Install CocoaPods
-        run: |
-          cd example/ios
-          pod install --repo-update
+        run: flutter pub get
+        working-directory: example
 
       - name: Build IPA
-        run: |
-          cd example
-          flutter build ipa --release --no-codesign
+        run: flutter build ipa --release --no-codesign
+        working-directory: example
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
@@ -42,4 +38,3 @@ jobs:
           name: ios-ipa
           path: example/build/ios/ipa/*.ipa
           if-no-files-found: error
-          #pls work
