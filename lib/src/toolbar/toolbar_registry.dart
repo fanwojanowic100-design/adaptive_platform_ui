@@ -17,6 +17,7 @@ class ToolbarEntry {
     required this.route,
     required this.navigator,
     required this.visible,
+    this.shownInPlace = true,
     this.tabBar,
     this.enclosingRoutes = const <ModalRoute<Object?>>[],
     this.titleOverlay,
@@ -45,6 +46,13 @@ class ToolbarEntry {
   /// False while the page is kept alive but not on screen, e.g. a
   /// non-selected tab of an IndexedStack.
   final bool visible;
+
+  /// False while the page is hidden in place by its parent, e.g. a
+  /// non-selected tab of an `IndexedStack`. Unlike [visible] this stays
+  /// false when a route covers the page too, which is what [ToolbarRegistry.below]
+  /// needs: a covered page has its tickers off as well, so [visible] cannot
+  /// tell the two apart.
+  final bool shownInPlace;
 
   /// The routes of the navigators this page's navigator is nested in, nearest
   /// first: for a page inside a tab or shell route, the route that hosts the
@@ -133,9 +141,11 @@ class ToolbarRegistry extends ChangeNotifier {
   }
 
   /// The page whose tab bar belongs with [entry]: [entry] itself, or the
-  /// scaffold hosting the tabs that [entry] lives in (a shell route). Null
-  /// when [entry] is outside any tab layout, such as a page pushed on top of
-  /// the tabs, which hides the tab bar the way UIKit does.
+  /// scaffold hosting the tabs that [entry] lives in: a shell route around
+  /// the page's own navigator, or the very route the page is built on, as a
+  /// detail pane of a two-pane layout is (#173). Null when [entry] is
+  /// outside any tab layout, such as a page pushed on top of the tabs, which
+  /// hides the tab bar the way UIKit does.
   ToolbarEntry? tabBarOwnerFor(ToolbarEntry? entry) {
     if (entry == null) return null;
     if (entry.hasTabBar) return entry;
@@ -143,7 +153,8 @@ class ToolbarRegistry extends ChangeNotifier {
       final candidate = _entries[i];
       if (candidate.hasTabBar &&
           candidate.route != null &&
-          entry.enclosingRoutes.contains(candidate.route)) {
+          (entry.route == candidate.route ||
+              entry.enclosingRoutes.contains(candidate.route))) {
         return candidate;
       }
     }
@@ -167,7 +178,10 @@ class ToolbarRegistry extends ChangeNotifier {
       // Not filtered by [ToolbarEntry.visible]: a covered page is kept alive
       // with its tickers off until the page above starts to leave, and that
       // is exactly the page being asked for.
+      // Tabs of an IndexedStack share one route and one navigator with the
+      // selected tab; only the one shown in place is the page underneath.
       if (candidate.navigator == entry.navigator &&
+          candidate.shownInPlace &&
           (candidate.route?.isActive ?? false)) {
         return candidate;
       }
