@@ -29,17 +29,17 @@ jobs:
         working-directory: example
 
       - name: Generate Flutter framework package
-        run: flutter build swift-package --platform ios --build-mode release --no-codesign --output build/ios/SwiftPackages
+        run: flutter build swift-package --platform ios --build-mode debug --no-codesign --output build/ios/SwiftPackages
         working-directory: example
 
       - name: Link Flutter framework package
         run: |
-          framework_package=example/build/ios/SwiftPackages/FlutterNativeIntegration/Release/Packages/FlutterFramework
+          framework_package=example/build/ios/SwiftPackages/FlutterNativeIntegration/Debug/Packages/FlutterFramework
           test -d "$framework_package"
           ln -s "../$framework_package" ios/FlutterFramework
 
       - name: Build iOS Simulator app
-        run: flutter build ios --simulator --release
+        run: flutter build ios --simulator --debug --no-codesign
         working-directory: example
 
       - name: Package app for Appetize
