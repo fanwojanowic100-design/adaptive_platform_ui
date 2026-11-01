@@ -42,19 +42,19 @@ jobs:
         run: flutter build ios --simulator --debug --no-codesign
         working-directory: example
 
-      - name: Package app for Appetize
+      - name: Verify iOS Simulator app
         run: |
           app_path=$(find build/ios/iphonesimulator -maxdepth 1 -type d -name '*.app' -print -quit)
           if [[ -z "$app_path" ]]; then
             echo "No iOS Simulator .app was produced." >&2
             exit 1
           fi
-          ditto -c -k --sequesterRsrc --keepParent "$app_path" build/ios/appetize-ios-simulator.zip
+          echo "Found iOS Simulator app: $app_path"
         working-directory: example
 
       - name: Upload Appetize app
         uses: actions/upload-artifact@v4
         with:
           name: appetize-ios-simulator
-          path: example/build/ios/appetize-ios-simulator.zip
+          path: example/build/ios/iphonesimulator/*.app
           if-no-files-found: error
