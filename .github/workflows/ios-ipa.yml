@@ -1,4 +1,4 @@
-name: iOS IPA Build
+name: iOS Simulator Build (Appetize)
 
 on:
   workflow_dispatch:
@@ -38,13 +38,23 @@ jobs:
           test -d "$framework_package"
           ln -s "../$framework_package" ios/FlutterFramework
 
-      - name: Build iOS app
-        run: flutter build ipa --release --no-codesign
+      - name: Build iOS Simulator app
+        run: flutter build ios --simulator --release
         working-directory: example
 
-      - name: Upload .app bundle
+      - name: Package app for Appetize
+        run: |
+          app_path=$(find build/ios/iphonesimulator -maxdepth 1 -type d -name '*.app' -print -quit)
+          if [[ -z "$app_path" ]]; then
+            echo "No iOS Simulator .app was produced." >&2
+            exit 1
+          fi
+          ditto -c -k --sequesterRsrc --keepParent "$app_path" build/ios/appetize-ios-simulator.zip
+        working-directory: example
+
+      - name: Upload Appetize app
         uses: actions/upload-artifact@v4
         with:
-          name: ios-app
-          path: example/build/ios/archive/*.xcarchive/Products/Applications/*.app
+          name: appetize-ios-simulator
+          path: example/build/ios/appetize-ios-simulator.zip
           if-no-files-found: error
