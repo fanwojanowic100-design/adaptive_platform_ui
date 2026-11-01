@@ -120,7 +120,7 @@ class _ButtonDemoPageState extends State<ButtonDemoPage> {
                 ),
               ),
             ],
-          )
+          ),
         const SizedBox(height: 24),
 
         _buildSection(
