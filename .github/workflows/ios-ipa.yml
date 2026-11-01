@@ -28,6 +28,9 @@ jobs:
         run: flutter pub get
         working-directory: example
 
+      - name: Link Flutter framework package
+        run: ln -s ../example/ios/Flutter/ephemeral/Packages/.packages/FlutterFramework ios/FlutterFramework
+
       - name: Build IPA
         run: flutter build ipa --release --no-codesign
         working-directory: example
